@@ -1,0 +1,186 @@
+Copyright (c) 2002-2010 InMon Corp. Licensed under the terms of the InMon sFlow licence:
+http://www.inmon.com/technology/sflowlicense.txt
+
+                              mod_sflow
+                              =========
+
+  A binary, random-sampling Apache module designed for:
+       lightweight,
+        centralized,
+         continuous,
+          real-time monitoring of very large and very busy web farms.
+
+Installation (from rpm)
+=======================
+
+  Make sure the httpd-devel package is installed (to get the "apxs"
+  command), then try this:
+
+    $ rpmbuild -ba mod_sflow.spec
+
+  (You might have to copy the mod-sflow-<vesrion>.tar.gz file into
+   whatever SOURCES directory rpmbuild looks in, and try again)
+
+  rpmbuild will write the rpm into its RPMS/<arch>/ directory. To
+  install mod-sflow on this server (and any other server with
+  the same architecture, OS and apache version):
+
+    $ rpm -Uvh mod-sflow-<version>.<os>.<arch>.rpm
+
+  confirm that the mod_sflow.so file and related httpd.conf config
+  went to the right place, then restart apache via:
+
+    $ apachectl restart
+
+Installation (direct from sources)
+==================================
+
+  Compile and install the module into Apache's modules directory 
+  and add it to the apache httpd.conf config file by running:
+
+    $ rm -f `apxs -q LIBEXECDIR`/mod_sflow.so
+    $ apxs -c -i -a mod_sflow.c sflow_api.c
+
+  Then restart Apache via:
+
+    $ apachectl restart
+
+  Note:  the first step where the module is removed is important as
+  a workaround for Apache bug #47951.
+
+Configuration
+=============
+
+  This module reads it sFlow configuration from the /etc/hsflowd.auto
+  file that is generated automatically when you run the host-sflow
+  daemon "hsflowd" on the same server:
+
+  http://host-sflow.sourceforge.net
+
+  Optionally,  you can also install a handler that will return the
+  latest counter values.  This goes into your httpd.conf file,  or
+  in a separate file .../httpd/conf.d/sflow.conf:
+
+    <IfModule mod_sflow.c>
+      <Location /sflow>
+        SetHandler sflow
+      </Location>
+    </IfModule>
+
+  After restarting apache again, you should now be able to visit
+  http://<server>/sflow/ and see text/plain output like this:
+
+    counter method_option_count 0
+    counter method_get_count 34
+    counter method_head_count 0
+    counter method_post_count 0
+    counter method_put_count 0
+    counter method_delete_count 0
+    counter method_trace_count 0
+    counter method_connect_count 0
+    counter method_other_count 0
+    counter status_1XX_count 0
+    counter status_2XX_count 17
+    counter status_3XX_count 0
+    counter status_4XX_count 17
+    counter status_5XX_count 0
+    counter status_other_count 0
+    string hostname 10.0.0.119
+    gauge sampling_n 400
+
+Output
+======
+
+  The sFlow output goes to a UDP port on your sFlow collector host.
+  There you can examine it using a number of tools,  including the
+  freeware "sflowtool", which can be downloaded as source code from:
+  
+  http://www.inmon.com/technology/sflowTools.php
+
+  For example, to log all the fields in ASCII:
+ 
+  $ sflowtool
+
+  Or to log the HTTP samples in common-log-file format:
+
+  $ sflowtool -H
+
+
+Example output from sflowtool:
+
+	startDatagram =================================
+	datagramSourceIP 10.0.0.150
+	datagramSize 192
+	unixSecondsUTC 1294168545
+	datagramVersion 5
+	agentSubId 32576
+	agent 10.0.0.150
+	packetSequenceNo 7
+	sysUpTime 25000
+	samplesInPacket 1
+	startSample ----------------------
+	sampleType_tag 0:1
+	sampleType FLOWSAMPLE
+	sampleSequenceNo 1
+	sourceId 3:65537
+	meanSkipCount 400
+	samplePool 124
+	dropEvents 0
+	inputPort 0
+	outputPort 1073741823
+	flowBlock_tag 0:2100
+	extendedType socket4
+	socket4_ip_protocol 6
+	socket4_local_ip 10.0.0.150
+	socket4_remote_ip 10.0.0.70
+	socket4_local_port 80
+	socket4_remote_port 63023
+	flowBlock_tag 0:2201
+	flowSampleType http
+	http_method 2
+	http_protocol 1001
+	http_uri /membase.php
+	http_host 10.0.0.150
+	http_useragent Java/1.6.0_22
+	http_bytes 3487
+	http_duration_uS 24278
+	http_status 200
+	endSample   ----------------------
+	endDatagram   =================================
+	startDatagram =================================
+	datagramSourceIP 10.0.0.150
+	datagramSize 116
+	unixSecondsUTC 1294168501
+	datagramVersion 5
+	agentSubId 32576
+	agent 10.0.0.150
+	packetSequenceNo 3
+	sysUpTime 42000
+	samplesInPacket 1
+	startSample ----------------------
+	sampleType_tag 0:2
+	sampleType COUNTERSSAMPLE
+	sampleSequenceNo 3
+	sourceId 3:65537
+	counterBlock_tag 0:2201
+	http_method_option_count 0
+	http_method_get_count 113
+	http_method_head_count 0
+	http_method_post_count 0
+	http_method_put_count 0
+	http_method_delete_count 0
+	http_method_trace_count 0
+	http_methd_connect_count 0
+	http_method_other_count 0
+	http_status_1XX_count 0
+	http_status_2XX_count 112
+	http_status_3XX_count 0
+	http_status_4XX_count 1
+	http_status_5XX_count 0
+	http_status_other_count 0
+	endSample   ----------------------
+	endDatagram   =================================
+
+AUTHORS:
+Neil McKee <neil.mckee@inmon.com>
+Ian Meyer <ianmeyer@gmail.com>
